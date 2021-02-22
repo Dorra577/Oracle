@@ -90,8 +90,7 @@ Biensûr, lorsqu'on parle de gestion de conccurence entre plusieurs transactions
 | t5 | ```Commit;``` |------| Session 2: --> 1 row updated.|
 | t6  |```UPDATE EMP SET SAL = SAL + 1000 WHERE ENAME ='Mohamed';```|------| La session 1 va detecter l'interblocage|
 | t7 | | '''commit;''' |suite au commit l'interblocage a été levé et donc user1 a pu effectuer une mise a jour sur le salaire de mohamed|
-| t8 | ------ |```SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem', 'Maaoui');```|mohamed=3000
-hichem=5000|
+| t8 | ------ |```SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem', 'Maaoui');```|mohamed=3000 hichem=5000|
 
 ## Concurrence : Niveaux d'isolation des transactions
 
@@ -118,17 +117,17 @@ Autrement dit, le développeur déclare qu’une lecture va être suivie d’une
 | Timing | Session N° 1  | Session N° 2 |Résultat | 
 | :----: | :----: |:----:|:----:|
 | t0| ``` SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem');``` |||
-| t1 | ``` UPDATE EMP SET SAL = 4000 WHERE ENAME ='Hichem'; ``` |------|------|
-| t2 | ------ |```SET TRANSACTION ISOLATION LEVEL READ COMMITTED;```|------|
-| t3 | ------ |```SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem');```|------|
-| t4 | ------ |```UPDATE EMP SET SAL = 3800 WHERE ENAME ='Mohamed';```|------|
-| t5 | ```Insert into EMP (EMPNO,ENAME,JOB,MGR,HIREDATE,COMM,DEPTNO) values ('9999','Maaoui','Magician',null,to_date('17/02/2021','DD/MM/RR'),null,'10');``` |------|------|
-| t6 | ------ |```SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem', 'Maaoui');```|------|
-| t7 | ------ |```UPDATE EMP SET SAL = 5000 WHERE ENAME ='Hichem';```|------|
-| t8 | ```Commit;``` |------|------|
-| t9 | ------ |```SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem', 'Maaoui');```|------|
-| t10| ------ |```COMMIT;```|------|
-| t11| ```SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem', 'Maaoui');```|------|------|
+| t1 | ``` UPDATE EMP SET SAL = 4000 WHERE ENAME ='Hichem'; ``` |------|1 row updated ->le salaire de hichem est devenu =4000 mais ceci n'est pasenregistré dans la BDD car il n'ya pas eu de commit .|
+| t2 | ------ |```SET TRANSACTION ISOLATION LEVEL READ COMMITTED;```|Transaction set|
+| t3 | ------ |```SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem');```|mohamed=3000 hichem=5000|
+| t4 | ------ |```UPDATE EMP SET SAL = 3800 WHERE ENAME ='Mohamed';```|1 row updated ->le salaire de hichem est devenu =3800 mais ceci n'est pasenregistré dans la BDD car il n'ya pas eu de commit |
+| t5 | ```Insert into EMP (EMPNO,ENAME,JOB,MGR,HIREDATE,COMM,DEPTNO) values ('9999','Maaoui','Magician',null,to_date('17/02/2021','DD/MM/RR'),null,'10');``` |------|1 row created|
+| t6 | ------ |```SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem', 'Maaoui');```|mohamed=3800 hichem=5000 mais il n'a pas affiché maaoui car user2 n'a pas d'idée sur ce que effectue user1 en effet user2 effectue une copie de la BDD sur laquelle il va effectuer des mises a jour et elle n'est pas forcément la copie la plus récente  de plus user1 n'a pas effectué de commit|
+| t7 | ------ |```UPDATE EMP SET SAL = 5000 WHERE ENAME ='Hichem';```|user de la seesion 2 a detecté l'interblocage |
+| t8 | ```Commit;``` |------|commit complete-> 1 row updated dans la session 2 :user 2 a pu effectué la mise a jour  |
+| t9 | ------ |```SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem', 'Maaoui');```|Mohamed=3800 Hichem=5000 Maaoui|
+| t10| ------ |```COMMIT;```|commit complete dans la session2|
+| t11| ```SELECT ENAME, SAL FROM EMP WHERE ENAME IN ('Mohamed','Hichem', 'Maaoui');```|------|Mohamed=3800 Hichem=5000 Maaoui|
 
 
 
